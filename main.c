@@ -16,14 +16,44 @@ int main(int argc, char **argv) {
             .G = 1.0,
             .dt = 1.0
         };
-    
-    size_t objnum = 3;
+
+    // ファイルの読み込み
+    FILE *fp;
+    fp = fopen(argv[2], "r");
+    if (fp == NULL) {
+        printf("File open error\n");
+        exit(EXIT_FAILURE);
+    }
+    char line[256];
+
+    size_t objnum = atoi(argv[1]);
+
+    fgets(line, sizeof(line), fp);
+    if (line[0] != '#') {
+        fseek(fp, 0, SEEK_SET);
+    }
+
     Object objects[objnum];
-    
-    // オブジェクトの定義 
-    objects[0] = (Object){ .m = 10.0, .y = -20.0, .x = -10.0, .vy = 0.3, .vx = 0.1};
-    objects[1] = (Object){ .m = 13.0, .y =  20.0, .x = 10.0, .vy = 0.0, .vx = 0.2};
-    objects[2] = (Object){ .m = 10.0, .y =  10.0, .x = -10.0, .vy = 0.0, .vx = 0.1};
+    double m, y, x, vy, vx;
+    for (int i = 0; i < objnum; i++) {
+        fscanf(fp, "%lf %lf %lf %lf %lf", &m, &x, &y, &vx, &vy);
+        objects[i] = (Object){ .m = m, .y = y, .x = x, .vy = vy, .vx = vx};
+        char c = 0;
+        for (int j = 0; j < 50; j++) {
+            c = fgetc(fp);
+            if (c == '\n' || c == EOF) break;
+        }
+        if (fgetc(fp) == EOF) {
+            for (int k = i+1; k < objnum; k++) {
+                objects[k] = (Object){ .m = 0, .y = k*10, .x = k*10, .vy = 0, .vx = 0};
+            }
+            break;
+        } else {
+            fseek(fp, -1, SEEK_CUR);
+        }
+    }
+
+    fclose(fp);
     
     // シミュレーション. ループは整数で回しつつ、実数時間も更新する
     const double stop_time = 400;
@@ -37,7 +67,7 @@ int main(int argc, char **argv) {
         my_plot_objects(objects, objnum, t, cond);
         
         usleep(500 * 1000); // 200 x 1000us = 200 ms ずつ停止
-        printf("\e[%dA", cond.height+2);// 表示位置を巻き戻す。壁がないのでheight+2行（境界とパラメータ表示分）
+        printf("\e[%dA", cond.height+4);// 表示位置を巻き戻す。壁がないのでheight+2行（境界とパラメータ表示分）
     }
     return EXIT_SUCCESS;
 }
@@ -65,9 +95,16 @@ void my_plot_objects(Object objs[], const size_t numobj, const double t, const C
     }
 
     printf("-----\n");
-    printf("t = %f", t);
+    printf("t = %f\n", t);
+
+    printf("x座標 ");
     for (int i = 0; i < numobj; i++) {
-        printf(", objs[%d].y = %f", i, objs[i].y);
+        printf("%d: %f ", i, objs[i].x);
+    }
+    printf("\n");
+    printf("y座標 ");
+    for (int i = 0; i < numobj; i++) {
+        printf("%d: %f ", i, objs[i].y);
     }
 }
 
