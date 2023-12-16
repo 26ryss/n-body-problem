@@ -87,6 +87,7 @@ void my_plot_objects(Object objs[], const size_t numobj, const double t, const C
             for (int i = 0; i < numobj; i++) {
                 if (y == cond.height/2 + arr[i][0] - 1 && x == cond.width/2 + arr[i][1]) {
                     printf("o");
+                    break;
                 }
             }
             printf(" ");
