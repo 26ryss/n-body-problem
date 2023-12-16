@@ -7,6 +7,7 @@
 void my_plot_objects(Object objs[], const size_t numobj, const double t, const Condition cond);
 void my_update_velocities(Object objs[], const size_t numobj, const Condition cond);
 void my_update_positions(Object objs[], const size_t numobj, const Condition cond);
+void my_fusion(Object objs[], const size_t numobj, const Condition cond);
 
 int main(int argc, char **argv) {
     const Condition cond =
@@ -62,6 +63,7 @@ int main(int argc, char **argv) {
         t = i * cond.dt;
         my_update_velocities(objects, objnum, cond);
         my_update_positions(objects, objnum, cond);
+        my_fusion(objects, objnum, cond);
         
         // 表示の座標系は width/2, height/2 のピクセル位置が原点となるようにする
         my_plot_objects(objects, objnum, t, cond);
@@ -138,4 +140,22 @@ void my_update_positions(Object objs[], const size_t numobj, const Condition con
         objs[i].y += objs[i].prev_vy  * cond.dt;
         objs[i].x += objs[i].prev_vx  * cond.dt;
     } 
+}
+
+void my_fusion(Object objs[], const size_t numobj, const Condition cond){
+    double distance;
+    for (int i = 0; i < numobj; i++) {
+        for (int j = 0; j < numobj; j++) {
+            if (i == j) continue;
+            distance = sqrt(pow(objs[i].x - objs[j].x, 2) + pow(objs[i].y - objs[j].y, 2));
+            if (distance < 2) {
+                objs[i].m += objs[j].m;
+                objs[i].vx = (objs[i].m * objs[i].vx + objs[j].m * objs[j].vx) / (objs[i].m + objs[j].m);
+                objs[i].vy = (objs[i].m * objs[i].vy + objs[j].m * objs[j].vy) / (objs[i].m + objs[j].m);
+                objs[j].m = 0;
+                objs[j].x = 100000000000;
+                objs[j].y = 100000000000;
+            }
+        }
+    }
 }
