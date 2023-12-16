@@ -10,8 +10,11 @@ typedef struct condition {
 typedef struct object {
     double m;
     double y;
+    double x;
     double vy;
+    double vx;
     double prev_vy;
+    double prev_vx;
 } Object;
 
 // 授業で用意した関数のプロトタイプ宣言

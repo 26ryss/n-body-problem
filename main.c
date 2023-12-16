@@ -17,12 +17,13 @@ int main(int argc, char **argv) {
             .dt = 1.0
         };
     
-    size_t objnum = 2;
+    size_t objnum = 3;
     Object objects[objnum];
     
     // オブジェクトの定義 
-    objects[0] = (Object){ .m = 10.0, .y = -20.0, .vy = 0.3};
-    objects[1] = (Object){ .m = 10.0, .y =  20.0, .vy = 0.0};
+    objects[0] = (Object){ .m = 10.0, .y = -20.0, .x = -10.0, .vy = 0.3, .vx = 0.1};
+    objects[1] = (Object){ .m = 13.0, .y =  20.0, .x = 10.0, .vy = 0.0, .vx = 0.2};
+    objects[2] = (Object){ .m = 10.0, .y =  10.0, .x = -10.0, .vy = 0.0, .vx = 0.1};
     
     // シミュレーション. ループは整数で回しつつ、実数時間も更新する
     const double stop_time = 400;
@@ -45,18 +46,17 @@ int main(int argc, char **argv) {
 // 最終的には physics.h 内の、こちらが用意したプロトタイプをコメントアウト
 void my_plot_objects(Object objs[], const size_t numobj, const double t, const Condition cond){
     printf("\n");
-    int arr[numobj];
+    int arr[numobj][2];
     for (int i = 0; i < numobj; i++) {
-        arr[i] = (int)objs[i].y;
+        arr[i][0] = (int)objs[i].y;
+        arr[i][1] = (int)objs[i].x;
     }
 
     for(int y = 0; y < cond.height; y++){
         for (int x = 0; x < cond.width; x++) {
-            if (x == cond.width/2) {
-                for (int i = 0; i < numobj; i++) {
-                    if (y == cond.height/2 + arr[i] - 1) {
-                        printf("o");
-                    }
+            for (int i = 0; i < numobj; i++) {
+                if (y == cond.height/2 + arr[i][0] - 1 && x == cond.width/2 + arr[i][1]) {
+                    printf("o");
                 }
             }
             printf(" ");
@@ -73,19 +73,31 @@ void my_plot_objects(Object objs[], const size_t numobj, const double t, const C
 
 
 void my_update_velocities(Object objs[], const size_t numobj, const Condition cond){
+    double distance;
     for (int i = 0; i < numobj; i++) {
-        double acc = 0;
+        double acc_y = 0;
         for (int j = 0; j < numobj; j++) {
             if (i == j) continue;
-            acc += cond.G * objs[j].m * (objs[j].y - objs[i].y) / fabs(pow(objs[i].y - objs[j].y, 3));
+            distance = sqrt(pow(objs[i].x - objs[j].x, 2) + pow(objs[i].y - objs[j].y, 2));
+            acc_y += cond.G * objs[j].m * (objs[j].y - objs[i].y) / pow(distance, 3);
         }
         objs[i].prev_vy = objs[i].vy;
-        objs[i].vy += acc * cond.dt; 
+        objs[i].vy += acc_y * cond.dt; 
+
+        double acc_x = 0;
+        for (int j = 0; j < numobj; j++) {
+            if (i == j) continue;
+            distance = sqrt(pow(objs[i].x - objs[j].x, 2) + pow(objs[i].y - objs[j].y, 2));
+            acc_x += cond.G * objs[j].m * (objs[j].x - objs[i].x) / pow(distance, 3);
+        }
+        objs[i].prev_vx = objs[i].vx;
+        objs[i].vx += acc_x * cond.dt; 
     }
 }
 
 void my_update_positions(Object objs[], const size_t numobj, const Condition cond){
     for (int i = 0; i < numobj; i++) {
         objs[i].y += objs[i].prev_vy  * cond.dt;
+        objs[i].x += objs[i].prev_vx  * cond.dt;
     } 
 }
